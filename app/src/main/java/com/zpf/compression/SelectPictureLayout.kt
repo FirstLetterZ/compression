@@ -7,9 +7,9 @@ import com.zpf.compress.CompressManager
 import com.zpf.support.base.ViewProcessor
 import com.zpf.support.util.LogUtil
 import com.zpf.tool.FileUtil
+import com.zpf.tool.PublicUtil
 import com.zpf.tool.toast.ToastUtil
 import java.io.File
-import java.util.*
 
 class SelectPictureLayout : ViewProcessor() {
 
@@ -31,7 +31,8 @@ class SelectPictureLayout : ViewProcessor() {
         }.start()
         Build.SUPPORTED_ABIS
         LogUtil.e("CPU_ABI======>" + Build.CPU_ABI)
-        LogUtil.e("SUPPORTED_ABIS======>" + Arrays.toString(Build.SUPPORTED_ABIS))
+        LogUtil.e("screen height=" + PublicUtil.getDisplayMetrics().heightPixels)
+        LogUtil.e("screen width =" + PublicUtil.getDisplayMetrics().widthPixels)
     }
 
     private fun logFileType(name: String) {
@@ -77,27 +78,28 @@ class SelectPictureLayout : ViewProcessor() {
     }
 
     private fun testJpgCompress(sourcePath: String) {
-        if (!CompressManager.hasLoadNative()) {
-            if (!CompressManager.loadDownloadSoFile(context, "libjpeg.so")) {
-                CompressManager.loadLocalSoFile("jpeg")
-            }
-        }
+//        if (!CompressManager.hasLoadNative()) {
+//            if (!CompressManager.loadDownloadSoFile(context, "libjpeg.so")) {
+//                CompressManager.loadLocalSoFile("jpeg")
+//            }
+//        }
         val newFile = File(
             FileUtil.getAppCachePath(),
-            "c_" + System.currentTimeMillis() + ".jpg"
+            "compress_" + System.currentTimeMillis() + ".jpg"
         )
-        LogUtil.e("start testJpgCompress======>")
+        LogUtil.e("start testJpgCompress======>File size= " + File(sourcePath).length())
         val startTime = System.currentTimeMillis()
         try {
             val result =
                 CompressManager.compress(
                     sourcePath,
                     newFile.absolutePath,
-                    600,
-                    -1,
-                    100
+                    PublicUtil.getDisplayMetrics().widthPixels,
+                    PublicUtil.getDisplayMetrics().heightPixels,
+                    80
                 )
             LogUtil.e("result=$result")
+            LogUtil.e("after compress file size= " + newFile.length())
         } catch (e: Throwable) {
             LogUtil.e("Error==>" + e.message)
         }
@@ -108,20 +110,21 @@ class SelectPictureLayout : ViewProcessor() {
     private fun testPngCompress(sourcePath: String) {
         val newFile = File(
             FileUtil.getAppCachePath(),
-            "png_" + System.currentTimeMillis() + ".png"
+            "compress_" + System.currentTimeMillis() + ".png"
         )
-        LogUtil.e("start testPngCompress======>")
+        LogUtil.e("start testPngCompress======>File size= " + File(sourcePath).length())
         val startTime = System.currentTimeMillis()
         try {
             val result =
                 CompressManager.compress(
                     sourcePath,
                     newFile.absolutePath,
-                    -1,
-                    -1,
-                    100
+                    PublicUtil.getDisplayMetrics().widthPixels,
+                    PublicUtil.getDisplayMetrics().heightPixels,
+                    80
                 )
             LogUtil.e("result=$result")
+            LogUtil.e("after compress file size= " + newFile.length())
         } catch (e: Throwable) {
             LogUtil.e("Error==>" + e.message)
         }

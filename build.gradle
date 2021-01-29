@@ -5,13 +5,13 @@ buildscript {
     repositories {
         google()
         jcenter()
-        maven { url 'https://dl.bintray.com/testindata/maven' }
-        maven { url "http://mvn.mob.com/android" }
         maven { url 'https://dl.bintray.com/letterz/AndroidSupportMaven' }
         maven { url "https://jitpack.io" }
         mavenCentral()
     }
     dependencies {
+        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.8.4'
+        classpath 'com.github.dcendents:android-maven-gradle-plugin:2.1'
         classpath "com.android.tools.build:gradle:4.1.1"
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
         // NOTE: Do not place your application dependencies here; they belong
@@ -30,8 +30,6 @@ allprojects {
     repositories {
         google()
         jcenter()
-        maven { url 'https://dl.bintray.com/testindata/maven' }
-        maven { url "http://mvn.mob.com/android" }
         maven { url 'https://dl.bintray.com/letterz/AndroidSupportMaven' }
         maven { url "https://jitpack.io" }
         mavenCentral()

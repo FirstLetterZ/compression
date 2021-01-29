@@ -84,6 +84,9 @@ class AndroidCompressUtil {
         return degree;
     }
 
+    /**
+     * 使用了开源库luban的算法
+     */
     private static int computeSize(int width, int height) {
         width = width % 2 == 1 ? width + 1 : width;
         height = height % 2 == 1 ? height + 1 : height;
