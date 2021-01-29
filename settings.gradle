@@ -1,0 +1,5 @@
+include ':compress'
+include ':pnglib'
+include ':jpglib'
+include ':app'
+rootProject.name = "compression"
