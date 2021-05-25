@@ -4,6 +4,7 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 
 import java.io.File;
+import java.io.InputStream;
 
 public class CompressManager {
     private static final String libsPath = "libs";
@@ -11,6 +12,22 @@ public class CompressManager {
 
     private static class JpgLib {
         static com.zpf.compress.jpglib.CompressUtil instance = new com.zpf.compress.jpglib.CompressUtil();
+    }
+
+    //用于兼容Android Q，以及仅能通过uri读取文件流的情况
+    public static int compress(InputStream sourceStream, String targetFilePath,
+                               int outWidth, int outHeight, int quality) {
+        if (sourceStream == null || targetFilePath == null || quality < 0 || quality > 100) {
+            return CompressErrorCode.ERROR_CHECK_OPTION;
+        }
+        int result = AndroidCompressUtil.compress(sourceStream, targetFilePath, outWidth, outHeight, quality);
+        if (result < 0) {
+            File outFile = new File(targetFilePath);
+            if (outFile.exists()) {
+                outFile.delete();
+            }
+        }
+        return result;
     }
 
     public static int compress(String sourceFilePath, String targetFilePath, int outWidth, int outHeight,
@@ -40,8 +57,8 @@ public class CompressManager {
                 result = AndroidCompressUtil.compress(sourceFilePath, targetFilePath, outWidth, outHeight, quality);
             }
         }
-        File outFile = new File(targetFilePath);
         if (result < 0) {
+            File outFile = new File(targetFilePath);
             if (outFile.exists()) {
                 outFile.delete();
             }

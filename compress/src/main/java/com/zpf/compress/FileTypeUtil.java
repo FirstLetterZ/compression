@@ -3,32 +3,28 @@ package com.zpf.compress;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 
 public class FileTypeUtil {
 
     @FileType
+    public static int readFileType(InputStream is) throws IOException {
+        byte[] b = new byte[3];
+        is.read(b, 0, b.length);
+        String typeString = bytesToHexString(b);
+        if (typeString != null) {
+            return checkType(typeString.toUpperCase());
+        }
+        return FileType.UNKNOWN;
+    }
+
     public static int readFileType(String filePath) {
         File file = new File(filePath);
         if (file.exists() && file.isFile()) {
-            FileInputStream is = null;
-            try {
-                is = new FileInputStream(file);
-                byte[] b = new byte[3];
-                is.read(b, 0, b.length);
-                String typeString = bytesToHexString(b);
-                if (typeString != null) {
-                    return checkType(typeString.toUpperCase());
-                }
+            try (FileInputStream is = new FileInputStream(file)) {
+                return readFileType(is);
             } catch (Exception e) {
                 e.printStackTrace();
-            } finally {
-                if (is != null) {
-                    try {
-                        is.close();
-                    } catch (IOException e) {
-                        e.printStackTrace();
-                    }
-                }
             }
         }
         return FileType.UNKNOWN;
