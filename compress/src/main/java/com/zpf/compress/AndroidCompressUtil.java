@@ -6,7 +6,7 @@ import android.graphics.Matrix;
 import android.media.ExifInterface;
 import android.os.Build;
 
-import java.io.ByteArrayOutputStream;
+import java.io.BufferedInputStream;
 import java.io.Closeable;
 import java.io.File;
 import java.io.FileInputStream;
@@ -38,6 +38,14 @@ class AndroidCompressUtil {
             safeClose(sourceStream);
             return CompressErrorCode.ERROR_CHECK_OPTION;
         }
+        try {
+            if (!(sourceStream instanceof BufferedInputStream)) {
+                sourceStream = new BufferedInputStream(sourceStream);
+            }
+            sourceStream.mark(sourceStream.available());
+        } catch (Exception e) {
+            return CompressErrorCode.ERROR_CHECK_OPTION;
+        }
         BitmapFactory.Options options = new BitmapFactory.Options();
         options.inJustDecodeBounds = true;
         options.inSampleSize = 1;
@@ -50,10 +58,10 @@ class AndroidCompressUtil {
         options.inJustDecodeBounds = false;
         int originalWidth = options.outWidth;
         int originalHeight = options.outHeight;
-        if (outHeight < 0) {
+        if (outHeight <= 0) {
             outHeight = originalHeight;
         }
-        if (outWidth < 0) {
+        if (outWidth <= 0) {
             outWidth = originalWidth;
         }
         if (outWidth <= 0 || outHeight <= 0) {
@@ -61,22 +69,9 @@ class AndroidCompressUtil {
             return CompressErrorCode.ERROR_CHECK_OPTION;
         }
         options.inSampleSize = computeSize(outWidth, outHeight);
-        Bitmap.CompressFormat format;
-        int typeCode = FileType.UNKNOWN;
-        try {
-            typeCode = FileTypeUtil.readFileType(sourceStream);
-        } catch (IOException ignore) {
-            //
-        }
-        if (FileType.PNG == typeCode) {
-            format = Bitmap.CompressFormat.PNG;
-        } else if (FileType.WEBP == typeCode) {
-            format = Bitmap.CompressFormat.WEBP;
-        } else {
-            format = Bitmap.CompressFormat.JPEG;
-        }
         Bitmap sourceBitmap = null;
         try {
+            sourceStream.reset();
             sourceBitmap = BitmapFactory.decodeStream(sourceStream, null, options);
         } catch (Exception e) {
             //
@@ -99,11 +94,42 @@ class AndroidCompressUtil {
         if (targetParent != null && !targetParent.exists()) {
             targetParent.mkdirs();
         }
-        try (ByteArrayOutputStream stream = new ByteArrayOutputStream(); FileOutputStream fos = new FileOutputStream(targetFilePath)) {
-            sourceBitmap.compress(format, quality, stream);
-            fos.write(stream.toByteArray());
+        Bitmap.CompressFormat format = null;
+        if (options.outMimeType != null) {
+            if (options.outMimeType.endsWith("png")) {
+                format = Bitmap.CompressFormat.PNG;
+            } else if (options.outMimeType.endsWith("webp")) {
+                format = Bitmap.CompressFormat.WEBP;
+            } else if (options.outMimeType.endsWith("jpg") || options.outMimeType.endsWith("jpeg")) {
+                format = Bitmap.CompressFormat.JPEG;
+            }
+        }
+        if (format == null && sourceFilePath != null) {
+            try {
+                sourceStream.reset();
+                int typeCode = FileTypeUtil.readFileType(sourceStream);
+                if (FileType.PNG == typeCode) {
+                    format = Bitmap.CompressFormat.PNG;
+                } else if (FileType.WEBP == typeCode) {
+                    format = Bitmap.CompressFormat.WEBP;
+                } else {
+                    format = Bitmap.CompressFormat.JPEG;
+                }
+            } catch (IOException ignore) {
+                //
+            }
+        }
+        if (format == null) {
+            format = Bitmap.CompressFormat.JPEG;
+        }
+        if (format != Bitmap.CompressFormat.PNG) {
+            options.inPreferredConfig = Bitmap.Config.RGB_565;
+        }
+        try (FileOutputStream fos = new FileOutputStream(targetFilePath)) {
+            sourceBitmap.compress(format, quality, fos);
             fos.flush();
         } catch (IOException e) {
+            e.printStackTrace();
             return CompressErrorCode.ERROR_WHITE_FILE;
         } finally {
             safeClose(sourceStream);
